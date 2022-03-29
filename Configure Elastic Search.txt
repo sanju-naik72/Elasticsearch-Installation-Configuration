@@ -1,0 +1,60 @@
+Go-To -
+	sudo vim /etc/elasticsearch/elasticsearch.yml
+		
+		Then Uncomment the following
+				
+				cluster.name: my-application
+				node.name: node-1
+				network.host: localhost
+				http.port: 9200
+				
+	sudo systemctl start elasticsearch
+	sudo systemctl status elasticsearch
+	
+	sudo vim /etc/kibana/kibana.yml
+		
+		Then Uncomment the following
+				
+				server.port: 5601
+				server.host: "localhost"
+				
+	sudo systemctl start kibana
+	sudo systemctl status kibana
+	
+For creating a apache login:
+===========================
+	sudo apt-get install -y apache2-utils
+	sudo htpasswd -c /etc/nginx/htpasswd.users kibadmin
+	sudo vim /etc/nginx/htpasswd.users
+	
+Connect nginx to kibana configuration:
+======================================
+
+	sudo vim /etc/nginx/sites-available/default
+	
+		server {
+                                        listen 80;
+
+                                        server_name 35.154.19.216;
+
+                                        auth_basic "Restricted Access";
+                                        auth_basic_user_file /etc/nginx/htpasswd.users;
+
+                                        location / {
+
+                                                proxy_pass http://localhost:5601;
+                                                proxy_http_version 1.1;
+                                                proxy_set_header Upgrade $http_upgrade;
+                                                proxy_set_header Connection 'upgrade';
+                                                proxy_set_header Host $host;
+                                                proxy_cache_bypass $http_upgrade;
+                                        }
+
+				
+	sudo systemctl restart nginx			
+	sudo systemctl status nginx
+	
+	Now go to browser and acces with public ip and give username and password which was configured above
+	Then you will be redirected to Kibana Dashboard
+	
+

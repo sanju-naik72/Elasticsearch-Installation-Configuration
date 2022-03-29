@@ -1,0 +1,130 @@
+Collect static Apache Logs using Logstash and analyze them using kibana
+=====================================================================
+
+
+				sudo wget https://logz.io/sample-data	
+
+				Bring the data in the logstash
+
+				 cd /etc/logstash/conf.d/
+				 	create a file name apachelog.conf
+
+					 vi apachelog.conf
+
+					 		Write a Pipeline in apachelog.conf
+							====================================
+
+input {
+file {
+path => "/home/ubuntu/apache.log"
+start_position => "beginning"
+sincedb_path => "/dev/null"
+	}
+}
+filter {
+grok {
+ match => {"message" => "%{COMBINEDAPACHELOG}"}
+	 }
+ date {
+ match => ["timestamp", "dd/MMM/yyyy:HH:mm:ss Z"]
+	 }
+ geoip{
+ source => "clientip"
+	 }
+	 }
+
+output {
+ elasticsearch{
+ hosts => ["localhost:9200"]
+ index => "petclinic-prd-1"
+ }
+ }
+
+
+sudo systemctl start logstash
+sudo systemctl status logstash
+
+
+
+Collect static ".CSV" using logstash and analyze them using kibana
+====================================================================
+
+sudo curl -O https://raw.githubusercontent.com/packtPublishing/Kibana-7-Quick-Start-Guide/master/Chapter02/crimes_2001.csv
+
+cd /etc/logstash/conf.d/
+
+create a file crimes.conf
+  
+  vi crimes.conf
+
+					Write a pipeline for static .CSV logstash
+					============================================
+input {
+file {
+path => "/home/ubuntu/crimes_2001.csv"
+start_position => "beginning"
+	}
+}
+filter{
+	csv{
+		columns => [
+			"ID",
+			"Case Number",
+			"Date",
+			"Block",
+			"IUCR",
+			"Primary Type",
+			"Description",
+			"location Description",
+			"Arrest",
+			"Domestic",
+			"Beat",
+			"District",
+			"Ward",
+			"Community Area",
+			"FBI Code",
+			"X Coordinate",
+			"Y Coordinate",
+			"Year",
+			"Updated On",
+			"latitude",
+			"longitude",
+			"location"
+		]
+		separator => ","
+	}
+}
+
+output{
+	elasticsearch{
+		action => "index"
+		hosts => ["localhost"]
+		index => "crimes"
+	}
+}
+
+
+Collect real-time web logs & configure beats to inject them into Elasticsearch , and analyze them using Kibana:
+===============================================================================================================
+
+sudo filebeat modules enable nginx
+sudo filebeat modules enable system
+
+sudo vim /etc/filebeat/modules.d/nginx.yml
+	edit: 
+			access:
+			enabled: true
+			var.paths: ["/var/log/nginx/access.log"]
+
+			error:
+			enabled: true
+			var.paths: ["/var/log/nginx/error.log"]
+
+sudo vim /etc/filebear/modules.d/system.yml
+			syslog:
+			var.paths: ["/var/log/syslog*"]
+			authlog:
+			var.paths: ["/var/log/auth.log*"]
+
+
+sudo filebeat setup -e ====> creates few inbuild Dashboard
